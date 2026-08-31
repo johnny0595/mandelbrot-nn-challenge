@@ -44,14 +44,6 @@ faster inference. There is no parameter cap.
 - TensorBoard loss curve and prediction snapshots throughout training
 - Model saving/loading
 
-The target math, view windows, render flow, zoom behavior, and video encoding are
-adapted from
-[MaxRobinsonTheGreat/mandelbrotnn](https://github.com/MaxRobinsonTheGreat/mandelbrotnn).
-The shared-layer pan/zoom interaction is inspired by the dashboard in
-[MaxRobinsonTheGreat/fractalsearch](https://github.com/MaxRobinsonTheGreat/fractalsearch).
-No license was present in that source repository, so this repository does not add or
-imply a new license for that reused code.
-
 ## About benchmark numbers
 
 Scores from this classroom notebook are not numerically comparable with the
