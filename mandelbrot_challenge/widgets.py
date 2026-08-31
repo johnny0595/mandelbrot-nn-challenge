@@ -54,7 +54,7 @@ def _viewer_html(truth, prediction, error, callback_name="", base_depth=100):
     #__VIEWER_ID__ .mb-stage.dragging { cursor: grabbing; }
     #__VIEWER_ID__ img {
       position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill;
-      transform-origin: 0 0; image-rendering: pixelated; pointer-events: none;
+      transform-origin: 0 0; pointer-events: none;
     }
     #__VIEWER_ID__ .mb-hud {
       position: absolute; left: 10px; bottom: 10px; padding: 6px 9px; border-radius: 6px;
@@ -74,7 +74,7 @@ def _viewer_html(truth, prediction, error, callback_name="", base_depth=100):
     <img alt="Interactive Mandelbrot comparison">
     <div class="mb-hud"></div>
   </div>
-  <div class="mb-help">Scroll and drag to choose an area, then re-render for fresh pixels; repeat to go deeper · double-click to reset</div>
+  <div class="mb-help">Scroll to zoom or drag to pan; fresh pixels render automatically · double-click to reset</div>
 </div>
 <script>
 (() => {
@@ -88,10 +88,12 @@ def _viewer_html(truth, prediction, error, callback_name="", base_depth=100):
   const full = __FULL__;
   const callbackName = __CALLBACK_NAME__;
   const refineButton = root.querySelector('[data-action="refine"]');
+  const autoRenderScale = 1.45;
   let baseBounds = {...full};
   let renderDepth = __BASE_DEPTH__;
   let currentLayer = 'target';
-  let scale = 1, tx = 0, ty = 0, dragging = false, rendering = false, lastX = 0, lastY = 0;
+  let scale = 1, tx = 0, ty = 0, dragging = false, dragMoved = false;
+  let rendering = false, lastX = 0, lastY = 0;
 
   Object.keys(views).forEach(name => {
     const option = document.createElement('option');
@@ -160,8 +162,12 @@ def _viewer_html(truth, prediction, error, callback_name="", base_depth=100):
         [bounds.xmin, bounds.xmax, bounds.ymin, bounds.ymax],
         {}
       );
-      let payload = response.data['application/json'];
+      const responseData = response?.data || {};
+      let payload = responseData['application/json'];
       if (typeof payload === 'string') payload = JSON.parse(payload);
+      if (!payload?.images || !payload.max_depth) {
+        throw new Error('Colab returned no render images. Run the explorer cell again and retry.');
+      }
       Object.assign(images, payload.images);
       baseBounds = {...bounds};
       renderDepth = payload.max_depth;
@@ -200,25 +206,34 @@ def _viewer_html(truth, prediction, error, callback_name="", base_depth=100):
   });
   stage.addEventListener('wheel', event => {
     event.preventDefault();
+    if (rendering) return;
     const rect = stage.getBoundingClientRect();
     const x = event.clientX - rect.left, y = event.clientY - rect.top;
-    const next = Math.min(80, Math.max(1, scale * Math.exp(-event.deltaY * .0015)));
+    const next = Math.min(autoRenderScale, Math.max(1, scale * Math.exp(-event.deltaY * .0015)));
     const ratio = next / scale;
     tx = x - (x - tx) * ratio;
     ty = y - (y - ty) * ratio;
     scale = next;
     apply();
+    if (callbackName && scale >= autoRenderScale - 0.001) {
+      renderBounds(visibleBounds());
+    }
   }, { passive: false });
   stage.addEventListener('pointerdown', event => {
-    dragging = true; lastX = event.clientX; lastY = event.clientY;
+    if (rendering) return;
+    dragging = true; dragMoved = false; lastX = event.clientX; lastY = event.clientY;
     stage.classList.add('dragging'); stage.setPointerCapture(event.pointerId);
   });
   stage.addEventListener('pointermove', event => {
     if (!dragging) return;
-    tx += event.clientX - lastX; ty += event.clientY - lastY;
+    const dx = event.clientX - lastX, dy = event.clientY - lastY;
+    tx += dx; ty += dy; dragMoved ||= Math.abs(dx) + Math.abs(dy) > 1;
     lastX = event.clientX; lastY = event.clientY; apply();
   });
-  stage.addEventListener('pointerup', () => { dragging = false; stage.classList.remove('dragging'); });
+  stage.addEventListener('pointerup', () => {
+    dragging = false; stage.classList.remove('dragging');
+    if (callbackName && dragMoved) renderBounds(visibleBounds());
+  });
   if (!callbackName || !window.google?.colab?.kernel) {
     refineButton.disabled = true;
     refineButton.title = 'Fresh re-rendering is available when this notebook runs in Google Colab.';
@@ -269,6 +284,13 @@ def _zoom_payload(model, bounds, target="smooth", base_depth=100, width=1024):
     }
 
 
+def _colab_json(payload):
+    """Return callback data with the JSON MIME type expected by Colab JavaScript."""
+    from IPython.display import JSON
+
+    return JSON(payload)
+
+
 def view_picker(model, target="smooth", max_depth=100):
     """Display a shared pan/zoom canvas for target, prediction, and error."""
     from IPython.display import HTML, display
@@ -280,7 +302,8 @@ def view_picker(model, target="smooth", max_depth=100):
         callback_name = f"mandelbrot_challenge.render_{uuid4().hex}"
 
         def render_zoom(xmin, xmax, ymin, ymax):
-            return _zoom_payload(model, (xmin, xmax, ymin, ymax), target, max_depth)
+            payload = _zoom_payload(model, (xmin, xmax, ymin, ymax), target, max_depth)
+            return _colab_json(payload)
 
         output.register_callback(callback_name, render_zoom)
     except ImportError:

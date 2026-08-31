@@ -1,8 +1,10 @@
 import shutil
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
 from pathlib import Path
+from types import ModuleType
 
 import numpy as np
 import torch
@@ -19,7 +21,7 @@ from mandelbrot_challenge.rendering import (
     view_grid,
 )
 from mandelbrot_challenge.targets import mandelbrot_targets, normalize_points, sample_points
-from mandelbrot_challenge.widgets import _viewer_html, _zoom_payload
+from mandelbrot_challenge.widgets import _colab_json, _viewer_html, _zoom_payload
 
 
 class TinyModel(nn.Module):
@@ -89,8 +91,21 @@ class CoreTests(unittest.TestCase):
             "invokeFunction",
             "challenge.render",
             "Reset view",
+            "fresh pixels render automatically",
+            "autoRenderScale",
+            "payload?.images",
         ):
             self.assertIn(text, html)
+
+    def test_colab_callback_returns_json_mime_payload(self):
+        payload = {"images": {"target": "data:image/png;base64,test"}, "max_depth": 100}
+        ipython = ModuleType("IPython")
+        display = ModuleType("IPython.display")
+        display.JSON = lambda data: type("JsonResponse", (), {"data": data})()
+        ipython.display = display
+        with patch.dict(sys.modules, {"IPython": ipython, "IPython.display": display}):
+            response = _colab_json(payload)
+        self.assertEqual(response.data, payload)
 
     def test_deep_target_grid_can_preserve_float64_coordinates(self):
         points, _, _ = view_grid(PRESET_VIEWS["Deep mini"], 16, torch.device("cpu"), torch.float64)
