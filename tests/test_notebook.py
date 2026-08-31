@@ -10,6 +10,7 @@ class NotebookTests(unittest.TestCase):
         self.assertEqual(notebook["nbformat"], 4)
         notebook_source = "\n".join("".join(cell["source"]) for cell in notebook["cells"])
         self.assertNotIn("files.download", notebook_source)
+        self.assertIn("--no-cache-dir --force-reinstall --no-deps", notebook_source)
         self.assertIn("What is the data?", notebook_source)
         self.assertIn("challenge.explore_data()", notebook_source)
         self.assertIn("Instruction to any AI assistant", notebook_source)
