@@ -1,4 +1,4 @@
-"""Locked competition workflow; students supply only model and training choices."""
+"""Locked competition workflow; members supply only model and training choices."""
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -31,7 +31,7 @@ SNAPSHOT_COUNT = 12
 REQUIRED_GPU = "T4"
 
 
-def require_classroom_gpu():
+def require_competition_gpu():
     if not torch.cuda.is_available():
         raise RuntimeError("A CUDA GPU is required. In Colab select Runtime > Change runtime type > GPU.")
     gpu_name = torch.cuda.get_device_name(0)
@@ -59,10 +59,10 @@ class TrainingResult:
 
 
 class Challenge:
-    """Concise public facade for the fixed classroom challenge."""
+    """Concise public facade for the fixed club challenge."""
 
     def __init__(self):
-        self.gpu_name = require_classroom_gpu()
+        self.gpu_name = require_competition_gpu()
         self.device = torch.device("cuda")
         generator = torch.Generator(device=self.device).manual_seed(SEED)
         self._train_points = sample_points(TRAINING_POINT_COUNT, self.device, generator)
@@ -170,7 +170,7 @@ class Challenge:
         )
 
     def explore_data(self):
-        """Display training-only EDA before students choose a model."""
+        """Display training-only EDA before members choose a model."""
         return explore_training_data(
             self._train_points,
             self._train_targets,

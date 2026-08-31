@@ -1,4 +1,4 @@
-"""Model persistence kept outside the student notebook."""
+"""Model persistence kept outside the editable notebook cells."""
 
 from pathlib import Path
 

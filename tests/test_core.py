@@ -10,7 +10,7 @@ from tensorboard.backend.event_processing.event_accumulator import EventAccumula
 from torch import nn
 
 from mandelbrot_challenge.persistence import load_model, save_model
-from mandelbrot_challenge.challenge import Challenge, require_classroom_gpu
+from mandelbrot_challenge.challenge import Challenge, require_competition_gpu
 from mandelbrot_challenge.exploration import explore_training_data
 from mandelbrot_challenge.rendering import (
     PRESET_VIEWS,
@@ -34,14 +34,14 @@ class TinyModel(nn.Module):
 class CoreTests(unittest.TestCase):
     @patch("mandelbrot_challenge.challenge.torch.cuda.get_device_name", return_value="Tesla T4")
     @patch("mandelbrot_challenge.challenge.torch.cuda.is_available", return_value=True)
-    def test_classroom_gpu_accepts_t4(self, _available, _name):
-        self.assertEqual(require_classroom_gpu(), "Tesla T4")
+    def test_competition_gpu_accepts_t4(self, _available, _name):
+        self.assertEqual(require_competition_gpu(), "Tesla T4")
 
     @patch("mandelbrot_challenge.challenge.torch.cuda.get_device_name", return_value="NVIDIA L4")
     @patch("mandelbrot_challenge.challenge.torch.cuda.is_available", return_value=True)
-    def test_classroom_gpu_rejects_other_hardware(self, _available, _name):
+    def test_competition_gpu_rejects_other_hardware(self, _available, _name):
         with self.assertRaisesRegex(RuntimeError, "requires an NVIDIA T4"):
-            require_classroom_gpu()
+            require_competition_gpu()
 
     def test_targets_support_both_modes(self):
         generator = torch.Generator().manual_seed(42)

@@ -1,4 +1,4 @@
-"""Interactive notebook explorer kept out of the student-facing cells."""
+"""Interactive notebook explorer kept out of the member-facing cells."""
 
 import base64
 from io import BytesIO

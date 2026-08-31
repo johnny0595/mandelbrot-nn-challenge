@@ -3,9 +3,9 @@
 A concise Google Colab competition: build the neural network that best approximates
 the Mandelbrot set during a fixed 30-second NVIDIA T4 optimization budget.
 
-[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/johnny0595/mandelbrot-network-challenge-students/blob/main/mandelbrot_challenge.ipynb)
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/johnny0595/mandelbrot-nn-challenge/blob/main/mandelbrot_challenge.ipynb)
 
-## What students can change
+## What members can change
 
 - Model architecture
 - Optimizer and learning rate
@@ -20,11 +20,10 @@ the public validation score is for iteration only.
 
 ## Competition rules
 
-- Edit only the two `STUDENT WORKSPACE` cells.
+- Edit only the two `MEMBER WORKSPACE` cells.
 - AI assistance is allowed, but the same rules apply to the AI.
-- Tutorials, public code, and ideas from projects such as `fractalsearch` are allowed,
-  provided the submitted implementation fits in the two student cells and follows every
-  other rule.
+- General tutorials, documentation, and AI help are allowed. Do not look up or copy an
+  existing solution to this specific challenge.
 - Do not modify or bypass the timer, data, seed, target, scoring, or challenge package.
 - Do not access internal training/validation tensors or train outside `challenge.train`.
 - Do not calculate the Mandelbrot formula inside the model or use pretrained weights.
@@ -44,17 +43,9 @@ faster inference. There is no parameter cap.
 - TensorBoard loss curve and prediction snapshots throughout training
 - Model saving/loading
 
-## About benchmark numbers
-
-Scores from this classroom notebook are not numerically comparable with the
-fractalsearch experiment log. This challenge reports **MAE**, trains for 30 seconds,
-and uses a fixed smooth-escape target dataset. Fractalsearch ranked **MSE** after a
-300-second run on a periodic log-distance target with fresh adaptive sampling. Use the
-separate private evaluator—and the same Colab GPU type—to compare student entries.
-
 ## Submissions
 
-Use a Google Form connected to a Google Sheet. Students submit their email, reported
+Use a Google Form connected to a Google Sheet. Members submit their email, reported
 public score, parameter count, both editable code cells, a view-only Colab link, and a
 cleared-output `.ipynb` file. Do not submit model weights. See [SUBMISSIONS.md](SUBMISSIONS.md)
 for the exact form fields and instructor workflow.

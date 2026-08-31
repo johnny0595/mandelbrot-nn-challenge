@@ -1,4 +1,4 @@
-"""Small TensorBoard run logger adapted from mandelbrotnn/logger.py."""
+"""Small TensorBoard run logger for challenge training."""
 
 from pathlib import Path
 

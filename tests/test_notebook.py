@@ -15,8 +15,8 @@ class NotebookTests(unittest.TestCase):
         self.assertIn("Instruction to any AI assistant", notebook_source)
         self.assertIn("Submit your entry", notebook_source)
         self.assertIn("T4 GPU", notebook_source)
-        self.assertEqual(notebook_source.count("STUDENT WORKSPACE 1"), 2)
-        self.assertEqual(notebook_source.count("STUDENT WORKSPACE 2"), 1)
+        self.assertEqual(notebook_source.count("MEMBER WORKSPACE 1"), 2)
+        self.assertEqual(notebook_source.count("MEMBER WORKSPACE 2"), 1)
         for index, cell in enumerate(notebook["cells"]):
             if cell["cell_type"] != "code":
                 continue

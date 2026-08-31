@@ -1,4 +1,4 @@
-"""Mandelbrot targets adapted from mandelbrotnn/src/dataset.py."""
+"""Mandelbrot target generation for the challenge."""
 
 import math
 
@@ -12,7 +12,7 @@ _TWO_PI = 2.0 * math.pi
 
 
 def normalize_points(points: torch.Tensor) -> torch.Tensor:
-    """Map raw Mandelbrot coordinates to [-1, 1]^2 for student models."""
+    """Map raw Mandelbrot coordinates to [-1, 1]^2 for member models."""
     x = 2 * (points[:, 0:1] - XMIN) / (XMAX - XMIN) - 1
     y = 2 * (points[:, 1:2] - YMIN) / (YMAX - YMIN) - 1
     return torch.cat((x, y), dim=1)
