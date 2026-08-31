@@ -45,7 +45,6 @@ def _viewer_html(truth, prediction, error, callback_name="", base_depth=100):
       padding: 7px 11px; cursor: pointer;
     }
     #__VIEWER_ID__ button.active { background: #f06a39; border-color: #f06a39; color: #111; font-weight: 700; }
-    #__VIEWER_ID__ button:disabled { cursor: wait; opacity: .55; }
     #__VIEWER_ID__ .mb-stage {
       position: relative; width: 100%; aspect-ratio: __ASPECT__; overflow: hidden;
       border: 1px solid #555; border-radius: 10px; background: #08080a;
@@ -67,14 +66,13 @@ def _viewer_html(truth, prediction, error, callback_name="", base_depth=100):
     <button data-layer="prediction">Prediction</button>
     <button data-layer="error">Absolute error</button>
     <select aria-label="Jump to view"></select>
-    <button data-action="refine">Re-render this view</button>
     <button data-action="reset">Reset view</button>
   </div>
   <div class="mb-stage">
     <img alt="Interactive Mandelbrot comparison">
     <div class="mb-hud"></div>
   </div>
-  <div class="mb-help">Scroll to zoom or drag to pan; fresh pixels render automatically · double-click to reset</div>
+  <div class="mb-help">Scroll to zoom or drag to pan; one fresh render starts when the gesture pauses · double-click to reset</div>
 </div>
 <script>
 (() => {
@@ -87,13 +85,12 @@ def _viewer_html(truth, prediction, error, callback_name="", base_depth=100):
   const views = __VIEWS__;
   const full = __FULL__;
   const callbackName = __CALLBACK_NAME__;
-  const refineButton = root.querySelector('[data-action="refine"]');
-  const autoRenderScale = 1.45;
+  const maxPreviewScale = 1.8;
   let baseBounds = {...full};
   let renderDepth = __BASE_DEPTH__;
   let currentLayer = 'target';
   let scale = 1, tx = 0, ty = 0, dragging = false, dragMoved = false;
-  let rendering = false, lastX = 0, lastY = 0;
+  let rendering = false, renderTimer = null, lastX = 0, lastY = 0;
 
   Object.keys(views).forEach(name => {
     const option = document.createElement('option');
@@ -152,9 +149,9 @@ def _viewer_html(truth, prediction, error, callback_name="", base_depth=100):
 
   async function renderBounds(bounds, presetName='') {
     if (!callbackName || !window.google?.colab?.kernel || rendering) return;
+    clearTimeout(renderTimer);
     bounds = fitStageAspect(bounds);
     rendering = true;
-    refineButton.disabled = true;
     hud.textContent = 'Rendering fresh target, prediction, and error pixels…';
     try {
       const response = await google.colab.kernel.invokeFunction(
@@ -180,8 +177,13 @@ def _viewer_html(truth, prediction, error, callback_name="", base_depth=100):
       console.error(error);
     } finally {
       rendering = false;
-      refineButton.disabled = false;
     }
+  }
+
+  function scheduleRender(delay=220) {
+    if (!callbackName || rendering) return;
+    clearTimeout(renderTimer);
+    renderTimer = setTimeout(() => renderBounds(visibleBounds()), delay);
   }
 
   root.querySelectorAll('[data-layer]').forEach(button => {
@@ -195,7 +197,6 @@ def _viewer_html(truth, prediction, error, callback_name="", base_depth=100):
     if (callbackName) renderBounds(views[select.value], select.value);
     else jumpLocally(select.value);
   });
-  refineButton.addEventListener('click', () => renderBounds(visibleBounds()));
   root.querySelector('[data-action="reset"]').addEventListener('click', () => {
     if (callbackName) renderBounds(full, 'Full set');
     else jumpLocally('Full set');
@@ -209,15 +210,13 @@ def _viewer_html(truth, prediction, error, callback_name="", base_depth=100):
     if (rendering) return;
     const rect = stage.getBoundingClientRect();
     const x = event.clientX - rect.left, y = event.clientY - rect.top;
-    const next = Math.min(autoRenderScale, Math.max(1, scale * Math.exp(-event.deltaY * .0015)));
+    const next = Math.min(maxPreviewScale, Math.max(1, scale * Math.exp(-event.deltaY * .0015)));
     const ratio = next / scale;
     tx = x - (x - tx) * ratio;
     ty = y - (y - ty) * ratio;
     scale = next;
     apply();
-    if (callbackName && scale >= autoRenderScale - 0.001) {
-      renderBounds(visibleBounds());
-    }
+    scheduleRender(scale >= maxPreviewScale - 0.001 ? 0 : 220);
   }, { passive: false });
   stage.addEventListener('pointerdown', event => {
     if (rendering) return;
@@ -232,11 +231,10 @@ def _viewer_html(truth, prediction, error, callback_name="", base_depth=100):
   });
   stage.addEventListener('pointerup', () => {
     dragging = false; stage.classList.remove('dragging');
-    if (callbackName && dragMoved) renderBounds(visibleBounds());
+    if (callbackName && dragMoved) scheduleRender(80);
   });
   if (!callbackName || !window.google?.colab?.kernel) {
-    refineButton.disabled = true;
-    refineButton.title = 'Fresh re-rendering is available when this notebook runs in Google Colab.';
+    hud.title = 'Fresh rendering is available when this notebook runs in Google Colab.';
   }
   image.src = images.target;
   requestAnimationFrame(apply);

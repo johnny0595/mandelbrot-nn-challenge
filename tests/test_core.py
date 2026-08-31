@@ -87,15 +87,16 @@ class CoreTests(unittest.TestCase):
             "Absolute error",
             "wheel",
             "pointermove",
-            "Re-render this view",
             "invokeFunction",
             "challenge.render",
             "Reset view",
-            "fresh pixels render automatically",
-            "autoRenderScale",
+            "one fresh render starts when the gesture pauses",
+            "scheduleRender",
+            "maxPreviewScale",
             "payload?.images",
         ):
             self.assertIn(text, html)
+        self.assertNotIn("Re-render this view", html)
 
     def test_colab_callback_returns_json_mime_payload(self):
         payload = {"images": {"target": "data:image/png;base64,test"}, "max_depth": 100}
