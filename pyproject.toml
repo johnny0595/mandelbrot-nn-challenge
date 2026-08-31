@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mandelbrot-network-challenge"
+version = "1.0.0"
+description = "A concise Colab competition for training neural networks on the Mandelbrot set"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "matplotlib>=3.8",
+  "numpy>=1.26",
+  "tensorboard>=2.15",
+  "torch>=2.2",
+  "tqdm>=4.66",
+]
+
+[tool.setuptools.packages.find]
+include = ["mandelbrot_challenge*"]
