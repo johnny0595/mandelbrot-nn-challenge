@@ -18,8 +18,8 @@ import random
 import time
 import urllib.request
 
-DEFAULT_ENDPOINT = "https://script.google.com/macros/s/REPLACE_WITH_DEPLOYMENT_ID/exec"
-DEFAULT_WORKSHOP_ID = "mandelbrot-workshop"
+DEFAULT_ENDPOINT = "[https://script.google.com/macros/s/AKfycbzVCs48MKOEC-OzXN4zU5JjP5EtTsU1JS9Q-BltFHUZaJdpcTRHWQeDVqJMCJkir0Yo/exec](https://script.google.com/macros/s/AKfycbzVCs48MKOEC-OzXN4zU5JjP5EtTsU1JS9Q-BltFHUZaJdpcTRHWQeDVqJMCJkir0Yo/exec)"
+DEFAULT_WORKSHOP_ID = "2026-fall-mandelbrot-beta"
 DEFAULT_TOKEN = "replace-with-shared-token"
 FALLBACK_DIR = "outputs/submissions"
 USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
