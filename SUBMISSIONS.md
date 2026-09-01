@@ -12,7 +12,7 @@ notebook cannot send.
 2. Each `challenge.train()` run builds a row and POSTs it to an Apps Script web app.
 3. The script appends the row to a tab named after the workshop.
 4. A public-safe dashboard polls the sheet every 2.5 seconds and smoothly adds the run to
-   the competition history chart and leaderboard.
+   an autoresearch-style chart.
 5. If the POST fails, the run is written to `outputs/submissions/*.json` inside the Colab
    session and the training cell says so.
 
@@ -84,11 +84,9 @@ you can link to it explicitly:
 https://script.google.com/macros/s/DEPLOYMENT_ID/exec?workshop=2026-fall-mandelbrot-beta
 ```
 
-Successful `print_result(result)` output includes this link. Open the deployed `/exec` URL,
-not the raw `Dashboard.html` file: the raw file has no permission to read the Google Sheet.
-The page checks for a new row every 2.5 seconds; no refresh button is needed. Each dot is a
-run, orange dots are new public records, and the orange staircase is the best score seen so
-far. The leaderboard ranks the 10 lowest public validation MAE results. Lower MAE is better.
+Successful `print_result(result)` output includes this link. The page checks for a new row
+every 2.5 seconds; no refresh button is needed. Each dot is a run, orange dots are new public
+records, and the orange staircase is the best score seen so far. Lower MAE is better.
 
 ### What the token does and does not do
 

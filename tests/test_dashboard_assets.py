@@ -28,24 +28,12 @@ class DashboardAssetTests(unittest.TestCase):
         ):
             self.assertNotIn(private_field, dashboard_function)
 
-    def test_dashboard_polls_and_draws_the_competition_history(self):
+    def test_dashboard_polls_and_draws_the_autoresearch_marks(self):
         self.assertRegex(DASHBOARD, r"REFRESH_MS\s*=\s*2500")
         self.assertIn("google.script.run", DASHBOARD)
         self.assertIn("getDashboardData(WORKSHOP_ID)", DASHBOARD)
         self.assertIn("best-line", DASHBOARD)
         self.assertIn("run.isRecord", DASHBOARD)
-
-    def test_dashboard_is_named_for_the_competition(self):
-        self.assertIn("<h1>Mandelbrot NN Runs</h1>", DASHBOARD)
-
-    def test_leaderboard_sorts_all_runs_by_score_and_keeps_the_top_ten(self):
-        self.assertIn("<h2>Leaderboard</h2>", DASHBOARD)
-        self.assertIn("left.validationMae - right.validationMae", DASHBOARD)
-        self.assertIn(".slice(0, 10)", DASHBOARD)
-
-    def test_raw_html_explains_how_to_open_live_data(self):
-        self.assertIn("showLocalFileHelp()", DASHBOARD)
-        self.assertIn("Open live dashboard after deployment", DASHBOARD)
 
     def test_dashboard_uses_text_content_for_member_supplied_text(self):
         self.assertIn("tooltip.textContent", DASHBOARD)

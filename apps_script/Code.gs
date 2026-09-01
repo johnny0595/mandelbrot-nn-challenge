@@ -42,7 +42,7 @@ function doGet(e) {
   const template = HtmlService.createTemplateFromFile('Dashboard');
   template.workshopId = workshopId;
   return template.evaluate()
-    .setTitle('Mandelbrot NN Runs')
+    .setTitle('Mandelbrot challenge progress')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 

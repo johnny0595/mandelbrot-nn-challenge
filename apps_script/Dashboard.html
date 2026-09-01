@@ -38,7 +38,6 @@
     }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px #16824618; }
     .status.error .status-dot { background: #b42318; box-shadow: 0 0 0 4px #b4231818; }
-    .status.preview .status-dot { background: var(--gray); box-shadow: none; }
 
     .chart-card {
       position: relative;
@@ -85,31 +84,16 @@
       box-shadow: 0 8px 24px rgba(40, 40, 40, 0.24);
     }
 
-    .leaderboard { margin-top: 24px; }
-    .leaderboard h2 { margin: 0; font-size: 18px; }
-    .leaderboard-note { margin: 2px 0 10px; color: var(--muted); font-size: 12px; }
+    .recent { margin-top: 24px; }
+    .recent h2 { margin: 0 0 10px; font-size: 15px; }
     .table-wrap { overflow-x: auto; border: 1px solid var(--grid); border-radius: 10px; background: white; }
     table { width: 100%; border-collapse: collapse; font-size: 12px; }
     th, td { padding: 9px 12px; text-align: left; border-bottom: 1px solid #eeeae6; white-space: nowrap; }
     th { color: var(--muted); font-weight: 600; background: #faf8f5; }
     tbody tr:last-child td { border-bottom: 0; }
     td.score { font-variant-numeric: tabular-nums; font-weight: 650; }
-    td.rank { width: 52px; font-variant-numeric: tabular-nums; font-weight: 700; }
-    .best-badge { margin-left: 6px; color: var(--orange); font-weight: 650; }
+    .record-badge { color: var(--orange); font-weight: 650; }
     .empty { padding: 72px 20px; text-align: center; color: var(--muted); }
-    .open-live {
-      display: inline-flex;
-      margin-top: 12px;
-      padding: 8px 12px;
-      border-radius: 7px;
-      background: var(--ink);
-      color: white;
-      font-size: 12px;
-      font-weight: 650;
-      text-decoration: none;
-    }
-    .open-live:hover { background: #111; }
-    .open-live:focus-visible { outline: 3px solid #fc4c0040; outline-offset: 2px; }
 
     @media (max-width: 620px) {
       main { width: min(100% - 20px, 1080px); margin-top: 24px; }
@@ -124,7 +108,7 @@
   <main>
     <header>
       <div>
-        <h1>Mandelbrot NN Runs</h1>
+        <h1>Mandelbrot autoresearch</h1>
         <p class="subtitle" id="summary">Waiting for the first training run…</p>
       </div>
       <div class="status" id="status"><span class="status-dot"></span><span>Connecting…</span></div>
@@ -143,32 +127,27 @@
       <p class="note">Each dot is one submitted 30-second training run. Lower is better. The orange staircase moves only when a run sets a new public record.</p>
     </section>
 
-    <section class="leaderboard" id="leaderboard" hidden>
-      <h2>Leaderboard</h2>
-      <p class="leaderboard-note">Top 10 submitted runs by public validation MAE. Lower is better.</p>
+    <section class="recent" id="recent" hidden>
+      <h2>Latest runs</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Rank</th><th>Run</th><th>Member</th><th>Public MAE</th><th>Parameters</th><th>Steps</th><th>Throughput</th></tr></thead>
-          <tbody id="leaderboard-body"></tbody>
+          <thead><tr><th>Run</th><th>Member</th><th>Public MAE</th><th>Parameters</th><th>Steps</th><th>Throughput</th></tr></thead>
+          <tbody id="recent-body"></tbody>
         </table>
       </div>
     </section>
   </main>
 
   <script>
-    const TEMPLATE_WORKSHOP_ID = '<?= workshopId ?>';
-    const WORKSHOP_ID = TEMPLATE_WORKSHOP_ID.startsWith('<?')
-      ? '2026-fall-mandelbrot-beta'
-      : TEMPLATE_WORKSHOP_ID;
-    const LIVE_DASHBOARD_URL = 'https://script.google.com/macros/s/AKfycbzVCs48MKOEC-OzXN4zU5JjP5EtTsU1JS9Q-BltFHUZaJdpcTRHWQeDVqJMCJkir0Yo/exec?workshop=2026-fall-mandelbrot-beta';
+    const WORKSHOP_ID = <?!= JSON.stringify(workshopId) ?>;
     const REFRESH_MS = 2500;
     const SVG_NS = 'http://www.w3.org/2000/svg';
     const chart = document.getElementById('chart');
     const summary = document.getElementById('summary');
     const status = document.getElementById('status');
     const tooltip = document.getElementById('tooltip');
-    const leaderboard = document.getElementById('leaderboard');
-    const leaderboardBody = document.getElementById('leaderboard-body');
+    const recent = document.getElementById('recent');
+    const recentBody = document.getElementById('recent-body');
     let previousCount = 0;
     let lastSignature = '';
     let latestRuns = [];
@@ -220,7 +199,7 @@
         message.textContent = 'The first completed training run will appear here automatically.';
         chart.appendChild(message);
         summary.textContent = `${data.workshopId} · waiting for submissions`;
-        leaderboard.hidden = true;
+        recent.hidden = true;
         return;
       }
 
@@ -231,7 +210,7 @@
       summary.textContent = `${runs.length} runs · ${Math.max(records.length - 1, 0)} improvements · baseline ${mae(baseline)} → best ${mae(best)} (−${improvement.toFixed(1)}%)`;
 
       drawChart(runs);
-      drawLeaderboard(runs);
+      drawRecent(runs);
       previousCount = runs.length;
     }
 
@@ -322,20 +301,11 @@
 
     function hideTooltip() { tooltip.style.display = 'none'; }
 
-    function drawLeaderboard(runs) {
-      leaderboardBody.replaceChildren();
-      const topRuns = [...runs]
-        .sort((left, right) =>
-          left.validationMae - right.validationMae
-          || (left.parameterCount ?? Infinity) - (right.parameterCount ?? Infinity)
-          || left.number - right.number
-        )
-        .slice(0, 10);
-
-      topRuns.forEach((run, index) => {
+    function drawRecent(runs) {
+      recentBody.replaceChildren();
+      runs.slice(-8).reverse().forEach(run => {
         const row = document.createElement('tr');
         const values = [
-          index + 1,
           `#${run.number}`,
           run.memberName,
           mae(run.validationMae),
@@ -346,41 +316,18 @@
         values.forEach((value, index) => {
           const cell = document.createElement('td');
           cell.textContent = value;
-          if (index === 0) cell.className = 'rank';
-          if (index === 3) cell.className = 'score';
+          if (index === 2) cell.className = 'score';
           row.appendChild(cell);
         });
-        if (index === 0) {
+        if (run.isRecord) {
           const badge = document.createElement('span');
-          badge.className = 'best-badge';
-          badge.textContent = ' best';
-          row.children[3].appendChild(badge);
+          badge.className = 'record-badge';
+          badge.textContent = '  record';
+          row.children[2].appendChild(badge);
         }
-        leaderboardBody.appendChild(row);
+        recentBody.appendChild(row);
       });
-      leaderboard.hidden = false;
-    }
-
-    function showLocalFileHelp() {
-      status.classList.add('preview');
-      setStatus('Preview only');
-      summary.textContent = 'The local HTML file has no access to the competition Google Sheet.';
-      chart.replaceChildren();
-      chart.setAttribute('viewBox', '0 0 960 360');
-      const message = svg('foreignObject', { x: 150, y: 78, width: 660, height: 210 });
-      const content = document.createElement('div');
-      content.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-      content.className = 'empty';
-      const explanation = document.createElement('div');
-      explanation.textContent = 'Deploy Code.gs and Dashboard.html as a new Apps Script version, then open the live page to load the recorded runs and leaderboard.';
-      const link = document.createElement('a');
-      link.className = 'open-live';
-      link.href = LIVE_DASHBOARD_URL;
-      link.textContent = 'Open live dashboard after deployment';
-      content.append(explanation, link);
-      message.appendChild(content);
-      chart.appendChild(message);
-      leaderboard.hidden = true;
+      recent.hidden = false;
     }
 
     document.addEventListener('visibilitychange', () => { if (!document.hidden) requestData(); });
@@ -389,12 +336,8 @@
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => { if (latestRuns.length) drawChart(latestRuns); }, 120);
     });
-    if (window.google && google.script && google.script.run) {
-      requestData();
-      setInterval(requestData, REFRESH_MS);
-    } else {
-      showLocalFileHelp();
-    }
+    requestData();
+    setInterval(requestData, REFRESH_MS);
   </script>
 </body>
 </html>
