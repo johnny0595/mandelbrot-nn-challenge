@@ -17,6 +17,7 @@ import os
 import random
 import time
 import urllib.request
+from urllib.parse import urlencode
 
 DEFAULT_ENDPOINT = "https://script.google.com/macros/s/AKfycbzVCs48MKOEC-OzXN4zU5JjP5EtTsU1JS9Q-BltFHUZaJdpcTRHWQeDVqJMCJkir0Yo/exec"
 DEFAULT_WORKSHOP_ID = "2026-fall-mandelbrot-beta"
@@ -44,6 +45,11 @@ def workshop_id():
 
 def shared_token():
     return os.environ.get("MANDELBROT_SUBMIT_TOKEN", DEFAULT_TOKEN)
+
+
+def dashboard_url():
+    """Return the live, public-safe progress dashboard for this workshop."""
+    return f"{endpoint()}?{urlencode({'workshop': workshop_id()})}"
 
 
 def fallback_dir():

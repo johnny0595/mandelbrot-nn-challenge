@@ -19,7 +19,7 @@ from .rendering import (
     save_full_and_deep,
     save_training_frame,
 )
-from .submission import resolve_member, submit_result
+from .submission import dashboard_url, resolve_member, submit_result
 from .targets import mandelbrot_targets, normalize_points, sample_points
 from .widgets import view_picker
 
@@ -224,3 +224,5 @@ def print_result(result):
     print(f"TensorBoard:           {result.tensorboard_dir}")
     print(f"Training video:        {result.training_video}")
     print(f"Submitted:             {'yes' if result.submitted else 'no (saved locally)'}")
+    if result.submitted:
+        print(f"Live progress:         {dashboard_url()}")

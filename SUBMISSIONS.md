@@ -11,7 +11,9 @@ notebook cannot send.
    OAuth, and asks once for a display name.
 2. Each `challenge.train()` run builds a row and POSTs it to an Apps Script web app.
 3. The script appends the row to a tab named after the workshop.
-4. If the POST fails, the run is written to `outputs/submissions/*.json` inside the Colab
+4. A public-safe dashboard polls the sheet every 2.5 seconds and smoothly adds the run to
+   an autoresearch-style chart.
+5. If the POST fails, the run is written to `outputs/submissions/*.json` inside the Colab
    session and the training cell says so.
 
 All of this lives in `mandelbrot_challenge/submission.py`, which members never open.
@@ -27,62 +29,18 @@ Do not share it with members. They never read from it.
 
 ### 2. Add the Apps Script
 
-In the sheet choose **Extensions → Apps Script**, replace the contents of `Code.gs` with the
-following, and fill in the two constants at the top.
+In the sheet choose **Extensions → Apps Script**. The repository contains the two files to
+copy into that project:
 
-```javascript
-const SHEET_ID = 'PASTE_YOUR_SHEET_ID_HERE';
-const SHARED_TOKEN = 'PASTE_A_LONG_RANDOM_STRING_HERE';
+1. Replace `Code.gs` with [`apps_script/Code.gs`](apps_script/Code.gs).
+2. Click **+ → HTML**, name the file `Dashboard`, and replace it with
+   [`apps_script/Dashboard.html`](apps_script/Dashboard.html).
+3. In `Code.gs`, fill in `SHEET_ID` and `SHARED_TOKEN`.
+4. Keep the active workshop in `PUBLIC_WORKSHOP_IDS`. Only those tabs can appear on the
+   public dashboard.
 
-function doPost(e) {
-  const lock = LockService.getScriptLock();
-  if (!lock.tryLock(30000)) {
-    return reply({ ok: false, error: 'busy' });
-  }
-  try {
-    const body = JSON.parse(e.postData.contents);
-    if (body.token !== SHARED_TOKEN) {
-      return reply({ ok: false, error: 'bad token' });
-    }
-    const payload = body.payload;
-    if (!payload || !payload.member_email) {
-      return reply({ ok: false, error: 'missing member_email' });
-    }
-    appendByHeader(sheetFor(payload.workshop_id || 'unsorted'), payload);
-    return reply({ ok: true });
-  } catch (error) {
-    return reply({ ok: false, error: String(error) });
-  } finally {
-    lock.releaseLock();
-  }
-}
-
-function reply(value) {
-  return ContentService.createTextOutput(JSON.stringify(value))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function sheetFor(name) {
-  const book = SpreadsheetApp.openById(SHEET_ID);
-  return book.getSheetByName(name) || book.insertSheet(name);
-}
-
-// Place each value under its own named column and add columns for keys this sheet has not
-// seen before. Adding a field to the payload can never shift existing rows out of line.
-function appendByHeader(sheet, payload) {
-  const width = Math.max(sheet.getLastColumn(), 1);
-  let headers = sheet.getLastRow() === 0
-    ? []
-    : sheet.getRange(1, 1, 1, width).getValues()[0].filter(String);
-  const missing = Object.keys(payload).filter(key => headers.indexOf(key) === -1);
-  if (missing.length) {
-    headers = headers.concat(missing);
-    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-    sheet.setFrozenRows(1);
-  }
-  sheet.appendRow(headers.map(key => (payload[key] === undefined ? '' : payload[key])));
-}
-```
+The dashboard receives only member name and performance numbers. Email addresses, submitted
+code, optimizer/loss descriptions, and the shared token never leave the private sheet.
 
 ### 3. Deploy it
 
@@ -92,6 +50,9 @@ function appendByHeader(sheet, payload) {
 - Who has access: **Anyone**
 
 Authorize when prompted and copy the `/exec` URL.
+
+After changing an existing deployment, choose **Deploy → Manage deployments → Edit**, select
+**New version**, and deploy. Saving the files alone does not update the public `/exec` URL.
 
 "Anyone" is required because members' Colab runtimes post without a Google identity attached
 to the request. The script is append-only and token-guarded, so the worst an outsider can do
@@ -113,6 +74,19 @@ serves many workshops.
 
 For testing, `MANDELBROT_SUBMIT_URL`, `MANDELBROT_WORKSHOP_ID`, and `MANDELBROT_SUBMIT_TOKEN`
 override the constants without editing code.
+
+### Open the live dashboard
+
+Open the same `/exec` URL in a browser. The current workshop is selected automatically, or
+you can link to it explicitly:
+
+```text
+https://script.google.com/macros/s/DEPLOYMENT_ID/exec?workshop=2026-fall-mandelbrot-beta
+```
+
+Successful `print_result(result)` output includes this link. The page checks for a new row
+every 2.5 seconds; no refresh button is needed. Each dot is a run, orange dots are new public
+records, and the orange staircase is the best score seen so far. Lower MAE is better.
 
 ### What the token does and does not do
 

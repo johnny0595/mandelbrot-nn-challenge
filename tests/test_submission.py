@@ -98,6 +98,19 @@ class PayloadTests(unittest.TestCase):
         with patch.dict(os.environ, {}, clear=True):
             self.assertEqual(submission.workshop_id(), submission.DEFAULT_WORKSHOP_ID)
 
+    def test_dashboard_url_uses_the_active_endpoint_and_workshop(self):
+        with patch.dict(
+            os.environ,
+            {
+                "MANDELBROT_SUBMIT_URL": "https://example.test/exec",
+                "MANDELBROT_WORKSHOP_ID": "fall 2026",
+            },
+        ):
+            self.assertEqual(
+                submission.dashboard_url(),
+                "https://example.test/exec?workshop=fall+2026",
+            )
+
     def test_describe_model_survives_a_model_without_source(self):
         source, summary = submission.describe_model(object())
         self.assertEqual(source, "")

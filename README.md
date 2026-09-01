@@ -45,10 +45,11 @@ faster inference. There is no parameter cap.
 
 ## Submissions
 
-Use a Google Form connected to a Google Sheet. Members submit their email, reported
-public score, parameter count, both editable code cells, a view-only Colab link, and a
-cleared-output `.ipynb` file. Do not submit model weights. See [SUBMISSIONS.md](SUBMISSIONS.md)
-for the exact form fields and instructor workflow.
+Every training run is submitted automatically to the organizer's private Google Sheet.
+The accompanying public-safe progress dashboard updates every few seconds with all runs,
+new records, and the running best. A short Google Form collects only the final notebook
+link, cleared-output `.ipynb`, and integrity confirmation. Do not submit model weights.
+See [SUBMISSIONS.md](SUBMISSIONS.md) for setup and organizer verification.
 
 ## Local development
 
