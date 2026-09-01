@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 import time
 
 import torch
@@ -18,6 +19,7 @@ from .rendering import (
     save_full_and_deep,
     save_training_frame,
 )
+from .submission import resolve_member, submit_result
 from .targets import mandelbrot_targets, normalize_points, sample_points
 from .widgets import view_picker
 
@@ -56,13 +58,15 @@ class TrainingResult:
     training_video: Path
     full_render: Path
     deep_render: Path
+    submitted: bool = False
 
 
 class Challenge:
     """Concise public facade for the fixed club challenge."""
 
-    def __init__(self):
+    def __init__(self, name=None):
         self.gpu_name = require_competition_gpu()
+        self.member = resolve_member(name)
         self.device = torch.device("cuda")
         generator = torch.Generator(device=self.device).manual_seed(SEED)
         self._train_points = sample_points(TRAINING_POINT_COUNT, self.device, generator)
@@ -147,6 +151,26 @@ class Challenge:
         )
         score = self._score(model)
         parameters = sum(parameter.numel() for parameter in model.parameters())
+        metrics = SimpleNamespace(
+            validation_mae=score,
+            parameter_count=parameters,
+            training_seconds=elapsed,
+            steps=steps,
+            samples_per_second=steps * batch_size / elapsed,
+            gpu_name=self.gpu_name,
+        )
+        # Submit before the slow render and video work so a rendering failure cannot
+        # cost the member the row recording their result.
+        submitted = submit_result(
+            metrics,
+            model,
+            optimizer,
+            loss_function,
+            batch_size,
+            scheduler,
+            self.member,
+            run_stamp=frame_dir.name,
+        )
         model_path = save_model(
             model,
             metadata={"public_validation_mae": score, "parameters": parameters, "steps": steps},
@@ -160,13 +184,14 @@ class Challenge:
             parameter_count=parameters,
             training_seconds=elapsed,
             steps=steps,
-            samples_per_second=steps * batch_size / elapsed,
+            samples_per_second=metrics.samples_per_second,
             gpu_name=self.gpu_name,
             model_path=model_path,
             tensorboard_dir=run_dir,
             training_video=training_video,
             full_render=full_render,
             deep_render=deep_render,
+            submitted=submitted,
         )
 
     def explore_data(self):
@@ -198,3 +223,4 @@ def print_result(result):
     print(f"Model:                 {result.model_path}")
     print(f"TensorBoard:           {result.tensorboard_dir}")
     print(f"Training video:        {result.training_video}")
+    print(f"Submitted:             {'yes' if result.submitted else 'no (saved locally)'}")
